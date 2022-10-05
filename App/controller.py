@@ -128,6 +128,22 @@ def getLastMovies(control, number,plat):
     bestbooks = model.getUltimos(control['model'], number,plat)
     return bestbooks
 
+def getReq1(control,ini):
+    movies_pais,time=model.getReq1(control['model'],ini)
+    return movies_pais,time
+
+def getReq2(control,ini):
+    movies_pais,time=model.getReq2(control['model'],ini)
+    return movies_pais,time
+
+def getReq3(control,actor):
+    casting = model.getReq3(control['model'], actor)
+    return casting
+
+def getReq4(control,top):
+    actor=model.getReq4(control['model'],top)
+    return actor
+
 def getReq5(control,pais):
     movies_pais=model.getReq5(control['model'],pais)
     return movies_pais

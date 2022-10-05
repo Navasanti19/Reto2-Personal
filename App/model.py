@@ -24,7 +24,7 @@
  * Dario Correal - Version inicial
  """
 
-
+from datetime import datetime
 import config as cf
 import time
 import tracemalloc
@@ -55,29 +55,32 @@ def newCatalog():
     catalog['hl'] = lt.newList('ARRAY_LIST', cmpMoviesByReleaseYear)
     catalog['dy'] = lt.newList('ARRAY_LIST', cmpMoviesByReleaseYear)
 
+    forma='PROBING'
+    load=0.7
+
     catalog['listed_in'] = mp.newMap(100,
-                                   maptype='CHAINING',
-                                   loadfactor=10,
+                                   maptype=forma,
+                                   loadfactor=load,
                                    comparefunction=None)
     catalog['release_year'] = mp.newMap(100,
-                                   maptype='CHAINING',
-                                   loadfactor=10,
+                                   maptype=forma,
+                                   loadfactor=load,
                                    comparefunction=None)
     catalog['date_added'] = mp.newMap(100,
-                                   maptype='CHAINING',
-                                   loadfactor=10,
+                                   maptype=forma,
+                                   loadfactor=load,
                                    comparefunction=None)
     catalog['cast'] = mp.newMap(100,
-                                   maptype='CHAINING',
-                                   loadfactor=10,
+                                   maptype=forma,
+                                   loadfactor=load,
                                    comparefunction=None)
     catalog['country'] = mp.newMap(100,
-                                   maptype='CHAINING',
-                                   loadfactor=4,
+                                   maptype=forma,
+                                   loadfactor=load,
                                    comparefunction=None)
     catalog['director'] = mp.newMap(100,
-                                   maptype='CHAINING',
-                                   loadfactor=10,
+                                   maptype=forma,
+                                   loadfactor=load,
                                    comparefunction=None)
     return catalog
 
@@ -91,14 +94,45 @@ def addMovie(catalog, book,plat,plat2=''):
     return catalog
 
 def addMovieMap(catalog, book):
+    #Req 1 Anio Release
+    anio=book["release_year"]
+    addMovieMap2(catalog,anio,book,"release_year")
+    
+    #Req 2 Anio Added
+    if book["date_added"]!='':
+        anio=str(datetime.strptime(book["date_added"], "%B %d, %Y"))
+        addMovieMap2(catalog,anio,book,"date_added")
+    else:
+        anio=book["date_added"]
+        addMovieMap2(catalog,anio,book,"date_added")
+    
+    #Req 3 Cast
+    genero=book["cast"]
+    if ',' in genero:
+        generos=genero.split(', ')
+        for i in generos:
+            addMovieMap2(catalog,i,book,'cast') 
+    else:
+        addMovieMap2(catalog,genero,book,'cast')
+
     #Req 4 Generos
     genero=book["listed_in"]
     if ',' in genero:
         generos=genero.split(', ')
         for i in generos:
-            addMovieMap2(catalog,i,book,'listed_in') 
+            if '&' in i:
+                j=i.split(' & ')
+                for k in j:
+                    addMovieMap2(catalog,k,book,'listed_in')
+            else:
+                addMovieMap2(catalog,i,book,'listed_in') 
     else:
-        addMovieMap2(catalog,genero,book,'listed_in')
+        if '&' in genero:
+            j=genero.split(' & ')
+            for k in j:
+                addMovieMap2(catalog,k,book,'listed_in')
+        else:
+            addMovieMap2(catalog,genero,book,'listed_in')
     
     #Req 5 Paises
     pais=book["country"]
@@ -119,7 +153,6 @@ def addMovieMap(catalog, book):
         addMovieMap2(catalog,director,book,'director')
    
     return catalog
-
 
 def addMovieMap2(catalog, pais, book, req):
     exist = mp.contains(catalog[req], pais)
@@ -162,23 +195,81 @@ def getUltimos(catalog, number,plat):
         lt.addLast(bestmovies, movie)
     return bestmovies
 
+def getReq1(catalog,f_ini):
+    start_time=getTime()
+    movies = mp.get(catalog['release_year'], f_ini)
+    movies = me.getValue(movies)['books']
+    movies2=lt.newList('ARRAY_LIST')
+    for i in lt.iterator(movies): 
+        if i['type']=='Movie':
+            lt.addLast(movies2, i)
+    mer.sort(movies2, cmpMoviesByTitle)
+    end_time=getTime()
+    times=deltaTime(start_time,end_time)
+    return movies2,round(times,3)
+
+def getReq2(catalog,f_ini):
+    start_time=getTime()
+    movies = mp.get(catalog['date_added'], f_ini)
+    movies = me.getValue(movies)['books']
+    movies2=lt.newList('ARRAY_LIST')
+    for i in lt.iterator(movies): 
+        if i['type']=='TV Show':
+            lt.addLast(movies2, i)
+    mer.sort(movies2, cmpMoviesByTitle)
+    end_time=getTime()
+    times=deltaTime(start_time,end_time)
+    return movies2,round(times,3)
+
+def getReq3(catalog, actor):
+    start_time=getTime()
+    movies = mp.get(catalog['cast'], actor)
+    movies = me.getValue(movies)['books']
+    numero_peliculas = 0
+    numero_shows = 0
+    for i in lt.iterator(movies):
+    
+        if i["type"] == "Movie":
+            numero_peliculas += 1
+        else:
+            numero_shows += 1
+    mer.sort(movies, cmpMoviesByReleaseYear)
+    end_time=getTime()
+    times=deltaTime(start_time,end_time)
+    return movies, numero_peliculas, numero_shows, round(times,3)
+
+def getReq4(catalog,genero):
+    start_time=getTime()
+    peliculas= mp.get(catalog['listed_in'], genero)
+    peliculas= me.getValue(peliculas)['books']
+    print(peliculas)
+    num_peliculas_genero= 0
+    num_shows_genero= 0
+    for cont in lt.iterator(peliculas):
+        if cont["type"] =="Movie":
+            num_peliculas_genero+= 1
+        else:
+            num_shows_genero+=1
+    mer.sort(peliculas, cmpMoviesByReleaseYear)
+    end_time=getTime()
+    times=deltaTime(start_time,end_time)
+    return  num_peliculas_genero, num_shows_genero, peliculas,round(times,3)
+
 def getReq5(catalog, pais):
     start_time=getTime()
     movies = mp.get(catalog['country'], pais)
     movies = me.getValue(movies)['books']
-    movies_pais_TV=lt.newList('ARRAY_LIST')
-    movies_pais_Peli=lt.newList('ARRAY_LIST')
+    moviesTV=0
+    moviesPeli=0
     for i in lt.iterator(movies): 
         if i['type']=='TV Show':
-            lt.addLast(movies_pais_TV, i)
-        elif i['type']=='Movie':
-            lt.addLast(movies_pais_Peli, i)
-    mer.sort(movies_pais_TV, cmpMoviesByReleaseYear)
-    mer.sort(movies_pais_Peli, cmpMoviesByReleaseYear)
+            moviesTV+=1
+        else:
+            moviesPeli+=1
+    mer.sort(movies, cmpMoviesByReleaseYear)
     end_time=getTime()
     times=deltaTime(start_time,end_time)
-    print(movies_pais_TV)
-    return movies_pais_TV, movies_pais_Peli,round(times,3)
+    return movies,moviesTV, moviesPeli,round(times,3)
 
 def getReq6(catalog, director):
     start_time=getTime()
@@ -236,13 +327,51 @@ def cmpMoviesByReleaseYear(movie1, movie2):
             if movie1['duration']<movie2['duration']:
                 return 0
         elif movie1['title'].lower() < movie2['title'].lower():
-            return 0
-        else:
             return 1
+        else:
+            return 0
     elif movie1['release_year']<movie2['release_year']:
         return 0
     else:
         return 1
+
+def cmpMoviesByTitle(movie1, movie2):
+    if movie1['title'].lower()==movie2['title'].lower():
+        if movie1['release_year'] == movie2['release_year']:
+            if movie1['director'] < movie2['director']:
+                return 1
+        elif movie1['release_year'] < movie2['release_year']:
+            return 1
+        else:
+            return 0
+    elif movie1['title'].lower()<movie2['title'].lower():
+        return 1
+    else:
+        return 0
+
+def cmpMoviesByDateAdded(movie1, movie2):
+    try:
+        if datetime.strptime(movie1['date_added'],"%Y-%m-%d")==datetime.strptime(movie2['date_added'],"%Y-%m-%d"):
+            if movie1['title'].lower() == movie2['title'].lower():
+                if movie1['duration']<movie2['duration']:
+                    return 0
+                else:
+                    return 1
+            elif movie1['title'].lower() < movie2['title'].lower():
+                return 0
+            else:
+                return 0
+        elif datetime.strptime(movie1['date_added'],"%Y-%m-%d")<datetime.strptime(movie2['date_added'],"%Y-%m-%d"):
+            return 0
+        else:
+            return 1
+    except:
+        if movie1['date_added']=='':
+            return 1
+        elif movie2['date_added']=='':
+            return 0
+        else: 
+            return 1 
 
 #Funciones de Tiempo
 

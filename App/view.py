@@ -20,6 +20,7 @@
  * along withthis program.  If not, see <http://www.gnu.org/licenses/>.
  """
 
+from datetime import datetime
 import config as cf
 import sys
 import controller
@@ -83,6 +84,9 @@ def printMenu():
     print("Bienvenido")
     print("1- Cargar información en el catálogo")
     print("2- Cosultar contenido estrenado en un año")
+    print("3- Cosultar contenido añadido en un año")
+    print("4- Cosultar contenido por actor")
+    print("5- Cosultar contenido por género")
     print("6- Cosultar contenido por país")
     print("7- Cosultar contenido por director involucrado")
 
@@ -155,38 +159,89 @@ def playLoadData():
     print(f'Memoria Utilizada: {memory}')
 
 def playReq1():
-    anio=int(input('\nIngrese el año: '))
+    anio=input('\nIngrese el año: ')
     Peli,time = controller.getReq1(catalog, anio)
     os.system('cls')
     print('============ Req No. 1 Inputs ============')
-    print(f'Movie released in {anio}')
+    print(f'Movie released in the year: {anio}')
 
     print('\n============ Req No. 1 Answer ============')
-    print(f'There are {lt.size(Peli)} IPs (Intelectual Properties) in "Movie" type released in {anio}')
+    print(f'There are {lt.size(Peli)} IPs (Intelectual Properties) in "Movie" type released in the year {anio}')
     print('The first 3 and last 3 IPs in range are:')
     head=['type','release_year','title','duration','stream_service','director','cast']
     printMoviesCant(Peli,3,head) if lt.size(Peli)>0 else print(f'No hay peliculas estrenadas en {anio}')
     print('Tiempo de ejecución:',time,'ms\n')
 
+def playReq2():
+    anio=datetime.strptime(input('\nIngrese la fecha: '), "%B %d, %Y")
+    print(anio)
+    Tv, time = controller.getReq2(catalog, str(anio))
+    os.system('cls')
+    print('============ Req No. 2 Inputs ============')
+    print(f'"TV Show" released in the date: {str(anio)[:10]}')
+
+    print('\n============ Req No. 2 Answer ============')
+    print(f'There are {lt.size(Tv)} IPs (Intelectual Properties) in the date: {str(anio)[:10]}')
+    print('The first 3 and last 3 IPs in range are:')
+    head=['type','date_added','title','duration','release_year','stream_service','director','cast']
+    printMoviesCant(Tv,3,head) if lt.size(Tv)>0 else print(f'No hay contenido en el año {datetime.strftime(anio, "%Y-%m-%d")}')
+    print('Tiempo de ejecución:',time,'ms\n')
+
+def playReq3():
+    casting = input("\nIngrese el nombre del actor que desea buscar: ")
+    info_actor,a,b,timesito = controller.get11Req3(catalog, casting)
+    os.system('cls')
+    print('============ Req No. 3 Inputs ============')
+    print(f'Content with {casting} in the "cast"')
+    
+    print('\n============ Req No. 3 Answer ============')
+    print(f'------ "{casting}" cast participation count ------')
+    numero_peliculas_y_shows = [["Movie",a],["TV Show",b]]
+    print(tabulate(numero_peliculas_y_shows,['type','count'],tablefmt='grid'))
+    
+    print(f'\n------ Participation Detalis ------')
+    print(f'There are less than 6 participation of "{casting}" on record') if lt.size(info_actor)<6 else print(f'The first 3 and last 3 IPs of "{casting}" are:')
+    headers = ['release_year','title','duration','director','stream_service','type','cast','country','rating','listed_in','description']
+    printMoviesCant(info_actor,3,headers) if lt.size(info_actor)>0 else print(f'No hay peliculas del actor {casting}')
+    print(f'\nEl tiempo de ejecución es: {timesito} ms\n')
+
+def playReq4():
+    generodeseado = input("\nDigita el género: ")
+    num_movies, num_shows,todas,timesito= controller.getReq4(catalog, generodeseado)
+    os.system('cls')
+    print('============ Req No. 4 Inputs ============')
+    print(f'The content is "listed_in" {generodeseado}')
+    
+    print('\n============ Req No. 4 Answer ============')
+    print(f'------ "{generodeseado}" content type count ------')
+    numero_peliculas_y_shows = [["Movie",num_movies],["TV Show",num_shows]]
+    print(tabulate(numero_peliculas_y_shows,['type','count'],tablefmt='grid'))
+
+    print(f'\n------ Content Detalis ------')
+    print(f'There are {lt.size(todas)} IPs (Intelectual Properties) with the {generodeseado} label')
+    print(f'There are less than 6 "listed_in" {generodeseado} on record') if lt.size(todas)<6 else print(f'The first 3 and last 3 IPs in range are:')
+    head=['release_year','title','duration','stream_service','director','type','cast','country','rating','listed_in','description']
+    printMoviesCant(todas,3,head) if lt.size(todas)>0 else print(f'No hay peliculas del genero {generodeseado}')
+    print(f'\nEl tiempo de ejecución es: {timesito} ms\n')
+
 def playReq5():
     pais=input('Ingrese el país a consultar Ej. "United States": ')
-    TV, Peli,time = controller.getReq5(catalog, pais)
+    movies, TV,Peli,time = controller.getReq5(catalog, pais)
     os.system('cls')
     print('============ Req No. 5 Inputs ============')
     print(f'The content produced in the "{pais}"')
     
     print('\n============ Req No. 5 Answer ============')
     print(f'------ "{pais}" content type production count ------')
-    table = [["TV Show",lt.size(TV)],["Movies",lt.size(Peli)]]
+    table = [["Movies",Peli],["TV Show",TV]]
     headers = ["Type", "Count"]
     print(tabulate(table, headers, tablefmt="grid"))
 
     print('\n------ Content details ------')
-    print(f'There are less than 6 produced in "{pais}" on record') if (lt.size(TV)+lt.size(Peli))<6 else print(f'The first 3 and last 3 IPs in produced in "{pais}" are:')
+    print(f'There are less than 6 produced in "{pais}" on record') if (lt.size(movies))<6 else print(f'The first 3 and last 3 IPs in produced in "{pais}" are:')
 
-    head=['release_year','title','director','stream_service','duration','type','cast','country','listed_in','description']
-    printMoviesCant(TV,3,head) if lt.size(TV)>0 else print(f'There are not "TV Shows" in {pais}')
-    printMoviesCant(Peli,3,head) if lt.size(Peli)>0 else print(f'\nThere are not "Movies" in {pais}\n')
+    head=['release_year','title','duration','stream_service','director','type','cast','country','rating','listed_in','description']
+    printMoviesCant(movies,3,head) if lt.size(movies)>0 else print(f'There are not content in {pais}')
     print('Tiempo de ejecución:',time,'ms')
 
 def playReq6():
@@ -215,7 +270,7 @@ def playReq6():
     print(f'\n------ "{director}" content details ------')
     print("There are only", num_todo_director, "IPs (Intelectual Properties) with", director, "as director")
     print('The first 3 and last 3 tags in range are:')
-    printMoviesCant(filtro_director,3,['title','release_year','director','stream_service','type','duration','cast','country', 'rating','listed_in','description'])
+    printMoviesCant(filtro_director,3,['release_year','title','duration','director','stream_service','type','cast','country', 'rating','listed_in','description'])
     print(f'\nEl tiempo de ejecución es: {timesito} ms\n')
 
 # Funciones Auxiliares
@@ -243,6 +298,12 @@ while True:
         playLoadData() 
     elif int(inputs[0])==2:
         playReq1()
+    elif int(inputs[0])==3:
+        playReq2()
+    elif int(inputs[0])==4:
+        playReq3()
+    elif int(inputs[0])==5:
+        playReq4()
     elif int(inputs[0])==6:
         playReq5()
     elif int(inputs[0])==7:
