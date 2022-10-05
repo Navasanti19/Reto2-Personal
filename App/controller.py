@@ -151,6 +151,10 @@ def getReq5(control,pais):
 def getReq6(control, director):
     return model.getReq6(control['model'], director)
 
+def getReq7(control,top):
+    actor=model.getReq7(control['model'],top)
+    return actor
+
 # Funciones de tiempo
 
 def getTime():

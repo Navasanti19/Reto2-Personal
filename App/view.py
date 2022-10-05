@@ -89,6 +89,9 @@ def printMenu():
     print("5- Cosultar contenido por género")
     print("6- Cosultar contenido por país")
     print("7- Cosultar contenido por director involucrado")
+    print("8- Cosultar el Top x de los géneros con más contenido")
+    print("9- el Top x de los actores con más participación")
+    print("0- Salir")
 
 # Función crear controlador
 
@@ -161,7 +164,7 @@ def playLoadData():
 def playReq1():
     anio=input('\nIngrese el año: ')
     Peli,time = controller.getReq1(catalog, anio)
-    os.system('cls')
+    #os.system('cls')
     print('============ Req No. 1 Inputs ============')
     print(f'Movie released in the year: {anio}')
 
@@ -273,6 +276,47 @@ def playReq6():
     printMoviesCant(filtro_director,3,['release_year','title','duration','director','stream_service','type','cast','country', 'rating','listed_in','description'])
     print(f'\nEl tiempo de ejecución es: {timesito} ms\n')
 
+def playReq7():
+    top_n=int(input('Que top desea consultar: '))
+    cuenta_actores,info_actores,timesito=controller.getReq7(catalog,top_n)
+    
+    #os.system('cls')
+    print('============ Req No. 7 Inputs ============')
+    print(f'the TOP "{top_n}" genres in "listed_in" ')
+    
+    print('\n============ Req No. 7 Answer ============')
+    print(f'There are "{lt.size(cuenta_actores)}" tags participating for the TOP {top_n} genres for "listed_in"')
+
+    print(f'\n------ The TOP "{top_n}" listed_in tags are: ------')
+    print(f'The TOP "{top_n}" actors are:')
+    table = []
+    for i in range(top_n):
+        table.append([cuenta_actores['elements'][i][0],cuenta_actores['elements'][i][1]])
+    headers = ["Listed_in", "Count"]
+    print(tabulate(table, headers, tablefmt="grid"))
+
+    print(f'\n------ Top actors participations details: ------')
+    print(f'The TOP "{top_n}" actors are:')
+    headers2 = ["type", 'count']
+    headerspro=['rank','listed_in','count','type','stream_service']
+    headers3=['stream_service','count']
+    
+    tablepro=[]
+    k=1
+    for i in info_actores.keys():
+        table2=[]
+        table3=[]
+        table2.append(['Movie',info_actores[i]['Movie']])
+        table2.append(['TV Show',info_actores[i]['TV Show']])
+        table3.append(['netflix',info_actores[i]['netflix']])
+        table3.append(['amazon',info_actores[i]['amazon prime']])
+        table3.append(['hulu',info_actores[i]['hulu']])
+        table3.append(['disney',info_actores[i]['disney plus']])
+        tablepro.append([k,i,cuenta_actores['elements'][k-1][1],tabulate(table2,headers2,tablefmt='plain'),tabulate(table3,headers3,tablefmt='plain')])
+        k+=1
+    print(tabulate(tablepro,headerspro,tablefmt='grid'))
+    print(f'\nEl tiempo de ejecución es: {timesito} ms\n')
+
 # Funciones Auxiliares
 
 def castBoolean(value):
@@ -308,6 +352,8 @@ while True:
         playReq5()
     elif int(inputs[0])==7:
         playReq6()
+    elif int(inputs[0])==8:
+        playReq7()
         
     else:
         sys.exit(0)

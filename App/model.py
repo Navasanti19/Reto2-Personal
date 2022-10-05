@@ -111,7 +111,9 @@ def addMovieMap(catalog, book):
     if ',' in genero:
         generos=genero.split(', ')
         for i in generos:
-            addMovieMap2(catalog,i,book,'cast') 
+            addMovieMap2(catalog,i,book,'cast')
+    elif genero=='':
+        addMovieMap2(catalog,'Unknown',book,'cast')
     else:
         addMovieMap2(catalog,genero,book,'cast')
 
@@ -163,13 +165,15 @@ def addMovieMap2(catalog, pais, book, req):
         value = newThing()
         mp.put(catalog[req], pais, value)
     lt.addLast(value['books'], book)
+    value['count']+=1
 
 
 # Funciones para creacion de datos
 
 def newThing():
     thing = {
-              "books": None
+              "books": None,
+              "count": 0
               }
     thing['books'] = lt.newList('ARRAY_LIST')
     return thing
@@ -205,6 +209,7 @@ def getReq1(catalog,f_ini):
             lt.addLast(movies2, i)
     mer.sort(movies2, cmpMoviesByTitle)
     end_time=getTime()
+    print(start_time,end_time)
     times=deltaTime(start_time,end_time)
     return movies2,round(times,3)
 
@@ -319,6 +324,34 @@ def getReq6(catalog, director):
     times=deltaTime(start_time,end_time)
     return num_todo_director,num_movies_director, num_shows_director, numero_generos_autor, plataformas, peliculas,round(times,3)
 
+def getReq7(catalog, top):
+    start_time=getTime()
+    movies1=catalog['mix']
+    generos=mp.keySet(catalog['listed_in'])
+    generos_cuenta=mp.valueSet(catalog['listed_in'])
+    
+    lista_cuenta=lt.newList('ARRAY_LIST')
+    
+    for i in range(1,lt.size(generos)+1):
+        lt.addLast(lista_cuenta,[lt.getElement(generos,i),lt.getElement(generos_cuenta,i)['count']])
+    mer.sort(lista_cuenta,cmpByCantidad)
+    top_n=lt.subList(lista_cuenta,1,top)
+    info_genero={}
+    for i in lt.iterator(top_n):
+        for j in lt.iterator(movies1):
+            if i[0] in j['listed_in']:
+                if i[0] in info_genero.keys():
+                    info_genero[i[0]][j['stream_service']]+=1
+                    info_genero[i[0]][j['type']]+=1
+                else:
+                    info_genero[i[0]]={'Movie':0,'TV Show':0,'netflix':0,'amazon prime':0,'hulu':0,'disney plus':0}
+                    info_genero[i[0]][j['stream_service']]+=1
+                    info_genero[i[0]][j['type']]+=1
+                    
+    end_time=getTime()
+    times=deltaTime(start_time,end_time)            
+    return lista_cuenta, info_genero, round(times,3)
+
 # Funciones de ordenamiento
 
 def cmpMoviesByReleaseYear(movie1, movie2):
@@ -373,6 +406,12 @@ def cmpMoviesByDateAdded(movie1, movie2):
         else: 
             return 1 
 
+def cmpByCantidad(actor1,actor2):
+    if actor1[1]>actor2[1]:
+        return 1
+    else:
+        return 0
+
 #Funciones de Tiempo
 
 def getTime():
@@ -382,7 +421,7 @@ def getTime():
     return float(time.perf_counter()*1000)
 
 
-def deltaTime(end, start):
+def deltaTime(start, end):
     """
     devuelve la diferencia entre tiempos de procesamiento muestreados
     """
