@@ -155,6 +155,11 @@ def getReq7(control,top):
     actor=model.getReq7(control['model'],top)
     return actor
 
+def getReq8(control,top):
+    actor=model.getReq8(control['model'],top)
+    return actor
+
+
 # Funciones de tiempo
 
 def getTime():

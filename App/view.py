@@ -317,6 +317,63 @@ def playReq7():
     print(tabulate(tablepro,headerspro,tablefmt='grid'))
     print(f'\nEl tiempo de ejecución es: {timesito} ms\n')
 
+def playReq8():
+    top_n=int(input('Que top desea consultar: '))
+    cuenta_actores,info_actores,timesito=controller.getReq8(catalog,top_n)
+    os.system('cls')
+    print('============ Req No. 8 (BONUS) Inputs ============')
+    print(f'Ranking the TOP "{top_n}" actors in "cast" ')
+    
+    print('\n============ Req No. 8 (BONUS) Answer ============')
+    print(f'There are "{lt.size(cuenta_actores)}" actors participating for the TOP {top_n} actors in "cast"')
+
+    print(f'\n------ The TOP "{top_n}" participations are: ------')
+    print(f'The TOP "{top_n}" actors are:')
+    table = []
+    j=0
+    for i in info_actores.keys():
+        max_key = max(info_actores[i]['genero'], key = info_actores[i]['genero'].get)
+        table.append([cuenta_actores['elements'][j][0],cuenta_actores['elements'][j][1],max_key])
+        j+=1
+    headers = ["Actor", "Count", 'Top_listed_in']
+    print(tabulate(table, headers, tablefmt="grid"))
+
+    print(f'\n------ Top actors participations details: ------')
+    print(f'The TOP "{top_n}" actors are:')
+    headers2 = ["stream_service", "type", 'count']
+    headers3=['','actor','content_type','count_movies','count_tv_shows']
+    plats=['netflix','amazon prime','hulu','disney plus']
+    table3=[]
+    table4=[['TV Show'],['Movie']]
+    k=1
+    for j in info_actores.keys():
+        table2 = []
+        for i in plats:
+            table5=[[info_actores[j][i]['TV Show']],[info_actores[j][i]['Movie']]]
+            table2.append([i,tabulate(table4,tablefmt='plain'),tabulate(table5, tablefmt='plain')])
+        table3.append([k,j,tabulate(table2,headers2,tablefmt='plain'),info_actores[j]['Movie'],info_actores[j]['TV Show']])
+        k+=1
+    print(tabulate(table3, headers3, tablefmt="grid"))
+
+    print(f'\n------ Top actors colaborations details: ------')
+    print(f'The TOP "{top_n}" actors are:') 
+    headers_colab=['','actor','colaborations_cast','colaboration_director']
+    table_colab=[]
+    i=1
+    for j in info_actores:
+        table_colab.append([i,j,info_actores[j]['colaborations'],info_actores[j]['direct_colab']])
+        i+=1
+    print(tabulate(table_colab,headers_colab,tablefmt='grid',maxcolwidths=60))
+
+    print(f'\n--------- Top actors content details: ---------')
+    head12=['type','release_year','title','duration']
+    for i in info_actores:
+        print(f'------- Actor {i} Movies and TV Shows ------')
+        printMoviesCant(info_actores[i]['movies'],3,head12) if lt.size(info_actores[i]['movies'])>0 else print(f'{i} no ha participado en películas\n')
+        printMoviesCant(info_actores[i]['tvshow'],3,head12) if lt.size(info_actores[i]['tvshow'])>0 else print(f'{i} no ha participado en programas de TV\n')
+
+    print(f'\nEl tiempo de ejecución es: {timesito} ms\n')
+
 # Funciones Auxiliares
 
 def castBoolean(value):
@@ -354,6 +411,8 @@ while True:
         playReq6()
     elif int(inputs[0])==8:
         playReq7()
+    elif int(inputs[0])==9:
+        playReq8()
         
     else:
         sys.exit(0)
