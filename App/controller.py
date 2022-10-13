@@ -23,7 +23,6 @@
 import config as cf
 import model
 import csv
-import csv
 import time
 import tracemalloc
 ...
@@ -115,8 +114,6 @@ def loadMovieDisney(catalog,archiv):
         model.addMovieMap(catalog,book)
     #sortMovies(catalog,plat)
     return model.titleSize(catalog,plat)
-
-# Funciones de ordenamiento
 
 # Funciones de consulta sobre el catálogo
 

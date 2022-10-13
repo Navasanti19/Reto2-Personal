@@ -164,7 +164,7 @@ def playLoadData():
 def playReq1():
     anio=input('\nIngrese el año: ')
     Peli,time = controller.getReq1(catalog, anio)
-    #os.system('cls')
+    os.system('cls')
     print('============ Req No. 1 Inputs ============')
     print(f'Movie released in the year: {anio}')
 
@@ -192,7 +192,7 @@ def playReq2():
 
 def playReq3():
     casting = input("\nIngrese el nombre del actor que desea buscar: ")
-    info_actor,a,b,timesito = controller.get11Req3(catalog, casting)
+    info_actor,a,b,timesito = controller.getReq3(catalog, casting)
     os.system('cls')
     print('============ Req No. 3 Inputs ============')
     print(f'Content with {casting} in the "cast"')
@@ -280,7 +280,7 @@ def playReq7():
     top_n=int(input('Que top desea consultar: '))
     cuenta_actores,info_actores,timesito=controller.getReq7(catalog,top_n)
     
-    #os.system('cls')
+    os.system('cls')
     print('============ Req No. 7 Inputs ============')
     print(f'the TOP "{top_n}" genres in "listed_in" ')
     

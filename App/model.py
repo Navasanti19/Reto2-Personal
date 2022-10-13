@@ -62,6 +62,10 @@ def newCatalog():
                                    maptype=forma,
                                    loadfactor=load,
                                    comparefunction=None)
+    catalog['listed_in2'] = mp.newMap(100,
+                                   maptype=forma,
+                                   loadfactor=load,
+                                   comparefunction=None)
     catalog['release_year'] = mp.newMap(100,
                                    maptype=forma,
                                    loadfactor=load,
@@ -122,18 +126,18 @@ def addMovieMap(catalog, book):
     if ',' in genero:
         generos=genero.split(', ')
         for i in generos:
-            """ if '&' in i:
+            if '&' in i:
                 j=i.split(' & ')
                 for k in j:
                     addMovieMap2(catalog,k,book,'listed_in')
-            else: """
+            
             addMovieMap2(catalog,i,book,'listed_in') 
     else:
-        """ if '&' in genero:
+        if '&' in genero:
             j=genero.split(' & ')
             for k in j:
                 addMovieMap2(catalog,k,book,'listed_in')
-        else: """
+        
         addMovieMap2(catalog,genero,book,'listed_in')
     
     #Req 5 Paises
@@ -154,6 +158,15 @@ def addMovieMap(catalog, book):
     else:
         addMovieMap2(catalog,director,book,'director')
    
+    #Req 7 Generos
+    genero=book["listed_in"]
+    if ',' in genero:
+        generos=genero.split(', ')
+        for i in generos:      
+            addMovieMap2(catalog,i,book,'listed_in2') 
+    else:
+        addMovieMap2(catalog,genero,book,'listed_in2')
+    
     return catalog
 
 def addMovieMap2(catalog, pais, book, req):
@@ -246,7 +259,6 @@ def getReq4(catalog,genero):
     start_time=getTime()
     peliculas= mp.get(catalog['listed_in'], genero)
     peliculas= me.getValue(peliculas)['books']
-    print(peliculas)
     num_peliculas_genero= 0
     num_shows_genero= 0
     for cont in lt.iterator(peliculas):
@@ -325,9 +337,9 @@ def getReq6(catalog, director):
 
 def getReq7(catalog, top):
     start_time=getTime()
-    movies1=catalog['mix']
-    generos=mp.keySet(catalog['listed_in'])
-    generos_cuenta=mp.valueSet(catalog['listed_in'])
+    #movies1=catalog['mix']
+    generos=mp.keySet(catalog['listed_in2'])
+    generos_cuenta=mp.valueSet(catalog['listed_in2'])
     
     lista_cuenta=lt.newList('ARRAY_LIST')
     
@@ -337,6 +349,8 @@ def getReq7(catalog, top):
     top_n=lt.subList(lista_cuenta,1,top)
     info_genero={}
     for i in lt.iterator(top_n):
+        movies1= mp.get(catalog['listed_in2'], i[0])
+        movies1= me.getValue(movies1)['books']
         for j in lt.iterator(movies1):
             if i[0] in j['listed_in']:
                 if i[0] in info_genero.keys():
@@ -354,19 +368,34 @@ def getReq7(catalog, top):
 def getReq8(catalog,top):
     start_time=getTime()
     movies=catalog['mix']
-    #movies1=catalog['cast']['books']
-    generos=mp.keySet(catalog['cast'])
-    generos_cuenta=mp.valueSet(catalog['cast'])
-    
     lista_cuenta=lt.newList('ARRAY_LIST')
-    
-    for i in range(1,lt.size(generos)+1):
-        lt.addLast(lista_cuenta,[lt.getElement(generos,i),lt.getElement(generos_cuenta,i)['count']])
+    cuenta={}
+    for i in lt.iterator(movies):
+        actor=i['cast']
+        if actor=='':
+            if 'Unknown' in cuenta.keys():
+                cuenta['Unknown']+=1
+            else:
+                cuenta['Unknown']=1
+        elif ',' in actor:
+            lista_actores=actor.split(', ')
+            for i in lista_actores:
+                if i in cuenta.keys():
+                    cuenta[i]+=1
+                else:
+                    cuenta[i]=1
+        else:
+            if actor in cuenta.keys():
+                cuenta[actor]+=1
+            else:
+                cuenta[actor]=1
+    for i in cuenta:
+        lt.addLast(lista_cuenta,[i,cuenta[i]])
     mer.sort(lista_cuenta,cmpByCantidad)
+
 
     top_n=lt.subList(lista_cuenta,1,top)
     info_actores={}
-    
     for i in lt.iterator(top_n):
         listica_colab=[]
         listica_colab_direct=[]
@@ -398,21 +427,21 @@ def getReq8(catalog,top):
                 if ',' in j['cast']:
                     lista_colab=j['cast'].split(', ')
                     for k in lista_colab:
-                        if k not in info_actores[i[0]]['colaborations']:
+                        if k not in listica_colab:
                             listica_colab.append(k)  
                 else:
                     if j['cast']!='':
                         listica_colab.append(j['cast'])
-                    elif j['cast']!=''and'Unknown' not in listica_colab:
+                    elif 'Unknown' not in listica_colab:
                         listica_colab.append('Unknown')
                 
                 if ',' in j['director']:
-                    lista_colab=j['director'].split(', ')
-                    for k in lista_colab:
-                        if k not in info_actores[i[0]]['direct_colab']:
-                            listica_colab_direct.append(k)  
+                    lista_colab_direct=j['director'].split(', ')
+                    for k in lista_colab_direct:
+                        if k not in listica_colab_direct:
+                            listica_colab_direct.append(k)
                 else:
-                    if j['director']!='':
+                    if j['director']!='' and  j['director'] not in listica_colab_direct :
                         listica_colab_direct.append(j['director'])
                     elif 'Unknown' not in listica_colab_direct:
                         listica_colab_direct.append('Unknown')
@@ -437,35 +466,37 @@ def getReq8(catalog,top):
 
                 info_actores[i[0]][j['stream_service']][j['type']]+=1
                 info_actores[i[0]][j['type']]+=1
+                
                 if ',' in j['cast']:
                     lista_colab=j['cast'].split(', ')
                     for k in lista_colab:
-                        if k not in info_actores[i[0]]['colaborations']:
-                            
-                            listica_colab.append(k)
+                        if k not in listica_colab:
+                            listica_colab.append(k)  
                 else:
                     if j['cast']!='':
                         listica_colab.append(j['cast'])
                     elif 'Unknown' not in listica_colab:
                         listica_colab.append('Unknown')
-
+                
                 if ',' in j['director']:
                     lista_colab_direct=j['director'].split(', ')
                     for k in lista_colab_direct:
-                        if k not in info_actores[i[0]]['direct_colab']:
-                            
+                        if k not in listica_colab_direct:
                             listica_colab_direct.append(k)
                 else:
-                    if j['director']!='':
+                    if j['director']!='' and  j['director'] not in listica_colab_direct :
                         listica_colab_direct.append(j['director'])
                     elif 'Unknown' not in listica_colab_direct:
                         listica_colab_direct.append('Unknown')
+        
         mer.sort(info_actores[i[0]]['movies'],cmpMoviesByReleaseYear)
         mer.sort(info_actores[i[0]]['tvshow'],cmpMoviesByReleaseYear)
         esta=True
         while esta:
             if i[0] in listica_colab and i[0]!='Unknown':
                 listica_colab.remove(i[0])
+                if len(listica_colab)==0:
+                    listica_colab.append('No Colabora con Nadie')
             else:
                 esta=False
         listica_colab.sort()
@@ -476,14 +507,23 @@ def getReq8(catalog,top):
                 info_actores[i[0]]['colaborations']=colab
             else:
                 info_actores[i[0]]['colaborations']=info_actores[i[0]]['colaborations']+', '+colab
+            if len(info_actores[i[0]]['colaborations'])>400:
+                info_actores[i[0]]['colaborations']=info_actores[i[0]]['colaborations']+'... '
+                break
         for colab in listica_colab_direct:
             if info_actores[i[0]]['direct_colab']=='':
                 info_actores[i[0]]['direct_colab']=colab
             else:
                 info_actores[i[0]]['direct_colab']=info_actores[i[0]]['direct_colab']+', '+colab
+            if len(info_actores[i[0]]['direct_colab'])>400:
+                info_actores[i[0]]['direct_colab']=info_actores[i[0]]['direct_colab']+'... '
+                break
+
     end_time=getTime()
     times=deltaTime(start_time,end_time)
     return lista_cuenta, info_actores, round(times,3)
+
+
 # Funciones de ordenamiento
 
 def cmpMoviesByReleaseYear(movie1, movie2):
