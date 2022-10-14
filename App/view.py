@@ -319,23 +319,33 @@ def playReq7():
 
 def playReq8():
     top_n=int(input('Que top desea consultar: '))
-    cuenta_actores,info_actores,timesito=controller.getReq8(catalog,top_n)
+    resp=input('¿Desea filtrar la búsqueda por un género en específico? (1: Si 2:No) ')
+    table = []
+    if resp=='1':
+        genero=input('Escriba el genero a consultar: ')
+        cuenta_actores,info_actores,timesito=controller.getReq8(catalog,top_n,genero)
+        j=0
+        for i in info_actores.keys():
+            table.append([cuenta_actores['elements'][j][0],cuenta_actores['elements'][j][1],genero])
+            j+=1
+    else:
+        genero='"Genero no especifico"'
+        cuenta_actores,info_actores,timesito=controller.getReq8_2(catalog,top_n)
+        j=0
+        for i in info_actores.keys():
+            max_key = max(info_actores[i]['genero'], key = info_actores[i]['genero'].get)
+            table.append([cuenta_actores['elements'][j][0],cuenta_actores['elements'][j][1],max_key])
+            j+=1
     os.system('cls')
     print('============ Req No. 8 (BONUS) Inputs ============')
-    print(f'Ranking the TOP "{top_n}" actors in "cast" ')
+    print(f'Ranking the TOP "{top_n}" actors in "cast" with content listed in {genero} ')
     
     print('\n============ Req No. 8 (BONUS) Answer ============')
-    print(f'There are "{lt.size(cuenta_actores)}" actors participating for the TOP {top_n} actors in "cast"')
+    print(f'There are "{lt.size(cuenta_actores)}" actors participating for the TOP {top_n} actors in "cast" with content listed in {genero}')
 
     print(f'\n------ The TOP "{top_n}" participations are: ------')
-    print(f'The TOP "{top_n}" actors are:')
-    table = []
-    j=0
-    for i in info_actores.keys():
-        max_key = max(info_actores[i]['genero'], key = info_actores[i]['genero'].get)
-        table.append([cuenta_actores['elements'][j][0],cuenta_actores['elements'][j][1],max_key])
-        j+=1
-    headers = ["Actor", "Count", 'Top_listed_in']
+    print(f'The TOP "{top_n}" actors in {genero} are:')
+    headers = ["Actor", "Count", 'Listed_in']
     print(tabulate(table, headers, tablefmt="grid"))
 
     print(f'\n------ Top actors participations details: ------')
@@ -366,7 +376,7 @@ def playReq8():
     print(tabulate(table_colab,headers_colab,tablefmt='grid',maxcolwidths=60))
 
     print(f'\n--------- Top actors content details: ---------')
-    head12=['type','release_year','title','duration']
+    head12=['type','release_year','title','duration','listed_in']
     for i in info_actores:
         print(f'------- Actor {i} Movies and TV Shows ------')
         printMoviesCant(info_actores[i]['movies'],3,head12) if lt.size(info_actores[i]['movies'])>0 else print(f'{i} no ha participado en películas\n')

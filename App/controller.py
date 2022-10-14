@@ -152,8 +152,12 @@ def getReq7(control,top):
     actor=model.getReq7(control['model'],top)
     return actor
 
-def getReq8(control,top):
-    actor=model.getReq8(control['model'],top)
+def getReq8(control,top,genero):
+    actor=model.getReq8(control['model'],top,genero)
+    return actor
+
+def getReq8_2(control,top):
+    actor=model.getReq8_2(control['model'],top)
     return actor
 
 

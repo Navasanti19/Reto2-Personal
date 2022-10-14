@@ -337,7 +337,6 @@ def getReq6(catalog, director):
 
 def getReq7(catalog, top):
     start_time=getTime()
-    #movies1=catalog['mix']
     generos=mp.keySet(catalog['listed_in2'])
     generos_cuenta=mp.valueSet(catalog['listed_in2'])
     
@@ -365,7 +364,155 @@ def getReq7(catalog, top):
     times=deltaTime(start_time,end_time)            
     return lista_cuenta, info_genero, round(times,3)
 
-def getReq8(catalog,top):
+def getReq8(catalog,top, genero):
+    start_time=getTime()
+    movies2= mp.get(catalog['listed_in2'], genero)
+    movies2= me.getValue(movies2)['books']
+    lista_cuenta=lt.newList('ARRAY_LIST')
+    cuenta={}
+    for i in lt.iterator(movies2):
+        actor=i['cast']
+        if actor=='':
+            if 'Unknown' in cuenta.keys():
+                cuenta['Unknown']+=1
+            else:
+                cuenta['Unknown']=1
+        elif ',' in actor:
+            lista_actores=actor.split(', ')
+            for i in lista_actores:
+                if i in cuenta.keys():
+                    cuenta[i]+=1
+                else:
+                    cuenta[i]=1
+        else:
+            if actor in cuenta.keys():
+                cuenta[actor]+=1
+            else:
+                cuenta[actor]=1
+    for i in cuenta:
+        lt.addLast(lista_cuenta,[i,cuenta[i]])
+    mer.sort(lista_cuenta,cmpByCantidad)
+
+
+    top_n=lt.subList(lista_cuenta,1,top)
+    info_actores={}
+    for i in lt.iterator(top_n):
+        listica_colab=[]
+        listica_colab_direct=[]
+        actorsito= mp.get(catalog['cast'], i[0])
+        actorsito= me.getValue(actorsito)['books']
+        for j in lt.iterator(actorsito):
+            if genero in j['listed_in']:
+                if i[0] in info_actores.keys():
+                    if j['type']=='Movie':
+                        lt.addLast(info_actores[i[0]]['movies'],j)
+                    else:
+                        lt.addLast(info_actores[i[0]]['tvshow'],j)
+                    
+                    
+                    info_actores[i[0]][j['stream_service']][j['type']]+=1
+                    info_actores[i[0]][j['type']]+=1
+
+                    if ',' in j['cast']:
+                        lista_colab=j['cast'].split(', ')
+                        for k in lista_colab:
+                            if k not in listica_colab:
+                                listica_colab.append(k)  
+                    else:
+                        if j['cast']!='':
+                            listica_colab.append(j['cast'])
+                        elif 'Unknown' not in listica_colab:
+                            listica_colab.append('Unknown')
+                    
+                    if ',' in j['director']:
+                        lista_colab_direct=j['director'].split(', ')
+                        for k in lista_colab_direct:
+                            if k not in listica_colab_direct:
+                                listica_colab_direct.append(k)
+                    else:
+                        if j['director']!='' and  j['director'] not in listica_colab_direct :
+                            listica_colab_direct.append(j['director'])
+                        elif 'Unknown' not in listica_colab_direct:
+                            listica_colab_direct.append('Unknown')
+                
+                else:
+                    info_actores[i[0]]={
+                    'netflix':{'TV Show':0,'Movie':0},
+                    'amazon prime':{'TV Show':0,'Movie':0},
+                    'hulu':{'TV Show':0,'Movie':0},
+                    'disney plus':{'TV Show':0,'Movie':0},
+                    'colaborations':'',
+                    'Movie':0,
+                    'TV Show':0,
+                    'direct_colab':'',
+                    'movies':lt.newList('ARRAY_LIST'),
+                    'tvshow':lt.newList('ARRAY_LIST')}
+                    
+                    if j['type']=='Movie':
+                        lt.addLast(info_actores[i[0]]['movies'],j)
+                    else:
+                        lt.addLast(info_actores[i[0]]['tvshow'],j)
+
+                    info_actores[i[0]][j['stream_service']][j['type']]+=1
+                    info_actores[i[0]][j['type']]+=1
+                    
+                    if ',' in j['cast']:
+                        lista_colab=j['cast'].split(', ')
+                        for k in lista_colab:
+                            if k not in listica_colab:
+                                listica_colab.append(k)  
+                    else:
+                        if j['cast']!='':
+                            listica_colab.append(j['cast'])
+                        elif 'Unknown' not in listica_colab:
+                            listica_colab.append('Unknown')
+                    
+                    if ',' in j['director']:
+                        lista_colab_direct=j['director'].split(', ')
+                        for k in lista_colab_direct:
+                            if k not in listica_colab_direct:
+                                listica_colab_direct.append(k)
+                    else:
+                        if j['director']!='' and  j['director'] not in listica_colab_direct :
+                            listica_colab_direct.append(j['director'])
+                        elif 'Unknown' not in listica_colab_direct:
+                            listica_colab_direct.append('Unknown')
+        
+        mer.sort(info_actores[i[0]]['movies'],cmpMoviesByReleaseYear)
+        mer.sort(info_actores[i[0]]['tvshow'],cmpMoviesByReleaseYear)
+        esta=True
+        while esta:
+            if i[0] in listica_colab and i[0]!='Unknown':
+                listica_colab.remove(i[0])
+                if len(listica_colab)==0:
+                    listica_colab.append('No Colabora con Nadie')
+            else:
+                esta=False
+        listica_colab.sort()
+        listica_colab_direct.sort()
+        
+        for colab in listica_colab:
+            if info_actores[i[0]]['colaborations']=='':
+                info_actores[i[0]]['colaborations']=colab
+            else:
+                info_actores[i[0]]['colaborations']=info_actores[i[0]]['colaborations']+', '+colab
+            if len(info_actores[i[0]]['colaborations'])>400:
+                info_actores[i[0]]['colaborations']=info_actores[i[0]]['colaborations']+'... '
+                break
+        for colab in listica_colab_direct:
+            if info_actores[i[0]]['direct_colab']=='':
+                info_actores[i[0]]['direct_colab']=colab
+            else:
+                info_actores[i[0]]['direct_colab']=info_actores[i[0]]['direct_colab']+', '+colab
+            if len(info_actores[i[0]]['direct_colab'])>400:
+                info_actores[i[0]]['direct_colab']=info_actores[i[0]]['direct_colab']+'... '
+                break
+
+    end_time=getTime()
+    times=deltaTime(start_time,end_time)
+    return lista_cuenta, info_actores, round(times,3)
+
+def getReq8_2(catalog,top):
     start_time=getTime()
     movies=catalog['mix']
     lista_cuenta=lt.newList('ARRAY_LIST')
@@ -522,7 +669,6 @@ def getReq8(catalog,top):
     end_time=getTime()
     times=deltaTime(start_time,end_time)
     return lista_cuenta, info_actores, round(times,3)
-
 
 # Funciones de ordenamiento
 
